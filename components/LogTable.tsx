@@ -292,12 +292,12 @@ const LogTable: React.FC<LogTableProps> = ({ rows, setRows }) => {
                                                 id={`time-${row.id}`}
                                                 value={row.waktu}
                                                 onChange={(e) => updateRow(row.id, 'waktu', e.target.value)}
-                                                className="sr-only"
+                                                className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+                                                style={{ fontSize: '16px' }}
                                             />
-                                            <button
-                                                type="button"
-                                                onClick={() => (document.getElementById(`time-${row.id}`) as HTMLInputElement)?.showPicker()}
-                                                className="cursor-pointer flex items-center justify-center w-full h-full"
+                                            <label
+                                                htmlFor={`time-${row.id}`}
+                                                className="cursor-pointer flex items-center justify-center w-full h-full pointer-events-none"
                                             >
                                                 {row.waktu ? (
                                                     <span className="font-bold text-gray-800 text-base">{row.waktu}</span>
@@ -307,7 +307,7 @@ const LogTable: React.FC<LogTableProps> = ({ rows, setRows }) => {
                                                         <polyline points="12 6 12 12 16 14"></polyline>
                                                     </svg>
                                                 )}
-                                            </button>
+                                            </label>
                                         </div>
                                     </td>
                                     <td className="py-3 px-1">
@@ -396,12 +396,12 @@ const LogTable: React.FC<LogTableProps> = ({ rows, setRows }) => {
                                                                 id={`time-${row.id}`}
                                                                 value={row.waktu}
                                                                 onChange={(e) => updateRow(row.id, 'waktu', e.target.value)}
-                                                                className="sr-only"
+                                                                className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+                                                                style={{ fontSize: '16px' }}
                                                             />
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => (document.getElementById(`time-${row.id}`) as HTMLInputElement)?.showPicker()}
-                                                                className="cursor-pointer flex items-center justify-center w-full h-full"
+                                                            <label
+                                                                htmlFor={`time-${row.id}`}
+                                                                className="cursor-pointer flex items-center justify-center w-full h-full pointer-events-none"
                                                             >
                                                                 {row.waktu ? (
                                                                     <span className="font-bold text-gray-800 text-base">{row.waktu}</span>
@@ -411,7 +411,7 @@ const LogTable: React.FC<LogTableProps> = ({ rows, setRows }) => {
                                                                         <polyline points="12 6 12 12 16 14"></polyline>
                                                                     </svg>
                                                                 )}
-                                                            </button>
+                                                            </label>
                                                         </div>
                                                     </td>
                                                     <td className="py-3 px-1">
