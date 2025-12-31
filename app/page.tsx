@@ -1,4 +1,7 @@
+'use client';
+
 import Link from 'next/link';
+import { VersionBadgeClickable } from '@/components/ChangeLog';
 
 export default function Home() {
   const menuItems = [
@@ -36,11 +39,9 @@ export default function Home() {
           ))}
         </div>
 
-        {/* Version Badge */}
+        {/* Version Badge - Clickable */}
         <div className="text-center mt-12">
-          <span className="inline-block bg-orange-100 text-orange-700 px-4 py-1.5 rounded-full text-xs font-medium">
-            v1.0.0 Beta
-          </span>
+          <VersionBadgeClickable />
         </div>
       </div>
 

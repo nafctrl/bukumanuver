@@ -6,6 +6,7 @@ import LogTable, { LogRow } from '@/components/LogTable';
 import WhatsAppGenerator from '@/components/WhatsAppGenerator';
 import Link from 'next/link';
 import { generateId } from '@/utils/generateId';
+import { APP_VERSION } from '@/components/ChangeLog';
 
 export default function CatatPage() {
     const [headerData, setHeaderData] = useState({
@@ -69,7 +70,7 @@ export default function CatatPage() {
                         </Link>
                         <div className="hidden md:block">
                             <div className="bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-xs font-medium">
-                                v1.0.0 Beta
+                                {APP_VERSION}
                             </div>
                         </div>
                     </div>

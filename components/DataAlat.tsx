@@ -19,6 +19,7 @@ interface Equipment {
     bay: string;
     gardu_induk?: string;
     created_at?: string;
+    updated_at?: string;  // Timestamp saat terakhir diedit
 }
 
 // Animation Variants
@@ -54,8 +55,8 @@ function parseEquipmentName(name: string): { type: string; section: string } {
 
 export default function DataAlat() {
     const [equipmentList, setEquipmentList] = useState<Equipment[]>([]);
-    // Undo stack: stores action type and affected item
-    const [history, setHistory] = useState<{ action: 'add' | 'delete'; item: Equipment }[]>([]);
+    // Undo stack: stores action type and affected item (for edit: also stores old values)
+    const [history, setHistory] = useState<{ action: 'add' | 'delete' | 'edit'; item: Equipment; oldItem?: Equipment }[]>([]);
     const [isUndoing, setIsUndoing] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
@@ -65,6 +66,10 @@ export default function DataAlat() {
     const [newRowId, setNewRowId] = useState<string | null>(null);
     const [isInitialLoad, setIsInitialLoad] = useState(true);  // Skip animation on first load
     const [filterBay, setFilterBay] = useState<string | null>(null);  // Bay filter
+    // Edit modal state
+    const [editingItem, setEditingItem] = useState<Equipment | null>(null);
+    const [editData, setEditData] = useState({ name: '', bay: '' });
+    const [editError, setEditError] = useState<string | null>(null);
     const tableContainerRef = useRef<HTMLDivElement>(null);
 
     const supabase = createClient();
@@ -98,8 +103,8 @@ export default function DataAlat() {
         setTimeout(() => setIsInitialLoad(false), 100);
     };
 
-    const pushToHistory = (action: 'add' | 'delete', item: Equipment) => {
-        setHistory((prev) => [...prev.slice(-19), { action, item }]); // Keep max 20 history
+    const pushToHistory = (action: 'add' | 'delete' | 'edit', item: Equipment, oldItem?: Equipment) => {
+        setHistory((prev) => [...prev.slice(-19), { action, item, oldItem }]); // Keep max 20 history
     };
 
     const undo = async () => {
@@ -142,6 +147,26 @@ export default function DataAlat() {
                     setHistory((prev) => prev.slice(0, -1));
                 } else {
                     console.error('Undo delete failed:', error);
+                }
+            } else if (lastAction.action === 'edit' && lastAction.oldItem) {
+                // Undo edit = restore old values to Supabase
+                const { error } = await supabase
+                    .from('peralatan')
+                    .update({
+                        nama_lengkap: lastAction.oldItem.nama_lengkap,
+                        type: lastAction.oldItem.type,
+                        section: lastAction.oldItem.section,
+                        bay: lastAction.oldItem.bay
+                    })
+                    .eq('id', lastAction.oldItem.id);
+
+                if (!error) {
+                    setEquipmentList((prev) => prev.map((item) =>
+                        item.id === lastAction.oldItem!.id ? lastAction.oldItem! : item
+                    ));
+                    setHistory((prev) => prev.slice(0, -1));
+                } else {
+                    console.error('Undo edit failed:', error);
                 }
             }
         } catch (err) {
@@ -251,6 +276,114 @@ export default function DataAlat() {
             setEquipmentList([]);
         }
         setIsConfirmOpen(false);
+    };
+
+    // Start editing an item
+    const startEdit = (item: Equipment) => {
+        // Parse nama_lengkap to extract name (type + section) and bay
+        // nama_lengkap format: "PMS BUS A BREBES 1" where bay is the last part
+        const parts = item.nama_lengkap.split(' ');
+        // Find where bay starts - bay is stored separately so we can use it
+        const bayParts = item.bay.split(' ');
+        const bayStartIndex = parts.length - bayParts.length;
+        const namePart = parts.slice(0, bayStartIndex).join(' ');
+
+        setEditingItem(item);
+        setEditData({ name: namePart, bay: item.bay });
+        setEditError(null);
+    };
+
+    // Save edited item
+    const handleSaveEdit = async () => {
+        if (!editingItem) return;
+
+        // Normalize voltage patterns
+        const trimmedName = normalizeVoltage(editData.name.trim().toUpperCase());
+        const trimmedBay = normalizeVoltage(editData.bay.trim().toUpperCase());
+
+        // Validation: Both fields required
+        if (!trimmedName || !trimmedBay) {
+            setEditError('Lengkapi nama peralatan dan bay!');
+            return;
+        }
+
+        // Validation: Name must have at least 2 words
+        const wordCount = trimmedName.split(/\s+/).length;
+        if (wordCount < 2) {
+            setEditError('Nama peralatan harus minimal 2 kata!');
+            return;
+        }
+
+        // Construct full name
+        const newNamaLengkap = `${trimmedName} ${trimmedBay}`;
+
+        // Validation: Check for duplicate (excluding current item)
+        const isDuplicate = equipmentList.some(
+            item => item.id !== editingItem.id && item.nama_lengkap === newNamaLengkap
+        );
+        if (isDuplicate) {
+            setEditError(`${newNamaLengkap} sudah ada!`);
+            return;
+        }
+
+        setIsSaving(true);
+
+        try {
+            // Parse name to get type and section
+            const { type, section } = parseEquipmentName(trimmedName);
+            const now = new Date().toISOString();
+
+            // Update in Supabase (keeps same ID)
+            const { error } = await supabase
+                .from('peralatan')
+                .update({
+                    nama_lengkap: newNamaLengkap,
+                    type: type,
+                    section: section,
+                    bay: trimmedBay,
+                    updated_at: now
+                })
+                .eq('id', editingItem.id);
+
+            if (error) {
+                console.error('Error updating equipment:', error);
+                setEditError(`Gagal: ${error.message || 'Unknown error'}`);
+            } else {
+                // Create updated item
+                const updatedItem: Equipment = {
+                    ...editingItem,
+                    nama_lengkap: newNamaLengkap,
+                    type: type,
+                    section: section,
+                    bay: trimmedBay,
+                    updated_at: now
+                };
+
+                // Push to history with old values for undo
+                pushToHistory('edit', updatedItem, editingItem);
+
+                // Update local state
+                setEquipmentList(prev => prev.map(item =>
+                    item.id === editingItem.id ? updatedItem : item
+                ));
+
+                // Close modal
+                setEditingItem(null);
+                setEditData({ name: '', bay: '' });
+            }
+        } catch (err) {
+            console.error('Error:', err);
+            setEditError('Terjadi kesalahan!');
+        }
+
+        setIsSaving(false);
+    };
+
+    // Cancel edit
+    const cancelEdit = () => {
+        setEditingItem(null);
+        setEditData({ name: '', bay: '' });
+        setEditError(null);
     };
 
     return (
@@ -398,15 +531,28 @@ export default function DataAlat() {
                                                     </button>
                                                 </td>
                                                 <td className="py-2 px-4 text-center">
-                                                    <button
-                                                        onClick={() => handleDelete(item.id)}
-                                                        className="text-red-500 hover:text-red-700 active:scale-90 transition-transform p-2"
-                                                    >
-                                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                            <line x1="18" y1="6" x2="6" y2="18"></line>
-                                                            <line x1="6" y1="6" x2="18" y2="18"></line>
-                                                        </svg>
-                                                    </button>
+                                                    <div className="flex items-center justify-center gap-1">
+                                                        <button
+                                                            onClick={() => startEdit(item)}
+                                                            className="text-gray-400 hover:text-orange-500 active:scale-90 transition-all p-2"
+                                                            title="Edit"
+                                                        >
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                                            </svg>
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDelete(item.id)}
+                                                            className="text-red-400 hover:text-red-600 active:scale-90 transition-all p-2"
+                                                            title="Hapus"
+                                                        >
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                                                            </svg>
+                                                        </button>
+                                                    </div>
                                                 </td>
                                             </motion.tr>
                                         ))
@@ -461,6 +607,92 @@ export default function DataAlat() {
                                 className="px-4 py-2 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors shadow-sm"
                             >
                                 Ya, Hapus Semua
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Edit Modal - Subtle overlay, focus on task */}
+            {editingItem && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-[2px] animate-in fade-in duration-150 p-4">
+                    <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6 w-full max-w-md animate-in zoom-in-95 duration-150">
+                        <h3 className="text-base font-semibold text-gray-700 mb-4 flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-orange-500">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                            </svg>
+                            Edit Peralatan
+                        </h3>
+
+                        {/* Error message */}
+                        {editError && (
+                            <div className="mb-4 p-3 bg-red-50 border border-red-100 rounded-lg text-red-600 text-sm">
+                                {editError}
+                            </div>
+                        )}
+
+                        {/* Form fields */}
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-xs text-gray-500 mb-1.5">Nama Peralatan</label>
+                                <input
+                                    type="text"
+                                    value={editData.name}
+                                    onChange={(e) => setEditData({ ...editData, name: e.target.value.toUpperCase() })}
+                                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:bg-white focus:border-orange-300 focus:outline-none focus:ring-2 focus:ring-orange-100 transition-all uppercase"
+                                    placeholder="Contoh: PMS BUS A"
+                                    disabled={isSaving}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs text-gray-500 mb-1.5">Bay</label>
+                                <input
+                                    type="text"
+                                    value={editData.bay}
+                                    onChange={(e) => setEditData({ ...editData, bay: e.target.value.toUpperCase() })}
+                                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:bg-white focus:border-orange-300 focus:outline-none focus:ring-2 focus:ring-orange-100 transition-all uppercase"
+                                    placeholder="Contoh: BREBES 1"
+                                    disabled={isSaving}
+                                />
+                            </div>
+                        </div>
+
+                        {/* Preview */}
+                        <div className="mt-4 p-3 bg-orange-50/50 rounded-lg border border-orange-100/50">
+                            <span className="text-xs text-gray-500">Hasil: </span>
+                            <span className="text-sm font-medium text-gray-700">
+                                {editData.name.trim() && editData.bay.trim()
+                                    ? `${editData.name.trim().toUpperCase()} ${editData.bay.trim().toUpperCase()}`
+                                    : '...'}
+                            </span>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex justify-end gap-3 mt-6">
+                            <button
+                                onClick={cancelEdit}
+                                disabled={isSaving}
+                                className="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                onClick={handleSaveEdit}
+                                disabled={isSaving}
+                                className="px-4 py-2 text-sm font-medium text-white bg-orange-500 hover:bg-orange-600 rounded-lg transition-colors shadow-sm disabled:opacity-50 flex items-center gap-2"
+                            >
+                                {isSaving ? (
+                                    <>
+                                        <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        Menyimpan...
+                                    </>
+                                ) : (
+                                    'Simpan'
+                                )}
                             </button>
                         </div>
                     </div>

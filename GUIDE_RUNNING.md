@@ -42,3 +42,5 @@ This "server" is a program that builds your website and serves it to your browse
 - **Stop**: To stop the server, go to the terminal and press `Ctrl + C`.
 
 That's it! You are now running your web application locally.
+
+cmd /c "npm run dev"

@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import CascadingDropdown from './CascadingDropdown';
+import TimePicker from './TimePicker';
 import { generateId } from '@/utils/generateId';
 
 export interface LogRow {
@@ -85,7 +86,7 @@ const InsertNode: React.FC<InsertNodeProps> = ({ onInsertRow, onInsertSeparator 
                         initial={{ opacity: 0, scale: 0.9, y: -10 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.9, y: -10 }}
-                        className="absolute top-5 left-1/2 -translate-x-1/2 flex gap-2 bg-white p-1.5 rounded-lg shadow-xl border border-gray-100 z-30"
+                        className="absolute top-5 left-1/2 -translate-x-1/2 flex gap-2 bg-white p-1.5 rounded-lg shadow-xl border border-gray-100 z-50"
                     >
                         <button
                             onClick={() => { onInsertRow(); setIsOpen(false); }}
@@ -286,29 +287,10 @@ const LogTable: React.FC<LogTableProps> = ({ rows, setRows }) => {
                                         </button>
                                     </td>
                                     <td className="p-0 text-center w-24">
-                                        <div className="relative h-12 w-full flex items-center justify-center">
-                                            <input
-                                                type="time"
-                                                id={`time-${row.id}`}
-                                                value={row.waktu}
-                                                onChange={(e) => updateRow(row.id, 'waktu', e.target.value)}
-                                                className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
-                                                style={{ fontSize: '16px' }}
-                                            />
-                                            <label
-                                                htmlFor={`time-${row.id}`}
-                                                className="cursor-pointer flex items-center justify-center w-full h-full pointer-events-none"
-                                            >
-                                                {row.waktu ? (
-                                                    <span className="font-bold text-gray-800 text-base">{row.waktu}</span>
-                                                ) : (
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-orange-500">
-                                                        <circle cx="12" cy="12" r="10"></circle>
-                                                        <polyline points="12 6 12 12 16 14"></polyline>
-                                                    </svg>
-                                                )}
-                                            </label>
-                                        </div>
+                                        <TimePicker
+                                            value={row.waktu}
+                                            onChange={(time) => updateRow(row.id, 'waktu', time)}
+                                        />
                                     </td>
                                     <td className="py-3 px-1">
                                         <div className="flex items-center gap-2">
@@ -390,29 +372,10 @@ const LogTable: React.FC<LogTableProps> = ({ rows, setRows }) => {
                                                         </button>
                                                     </td>
                                                     <td className="p-0 text-center w-24">
-                                                        <div className="relative h-12 w-full flex items-center justify-center">
-                                                            <input
-                                                                type="time"
-                                                                id={`time-${row.id}`}
-                                                                value={row.waktu}
-                                                                onChange={(e) => updateRow(row.id, 'waktu', e.target.value)}
-                                                                className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
-                                                                style={{ fontSize: '16px' }}
-                                                            />
-                                                            <label
-                                                                htmlFor={`time-${row.id}`}
-                                                                className="cursor-pointer flex items-center justify-center w-full h-full pointer-events-none"
-                                                            >
-                                                                {row.waktu ? (
-                                                                    <span className="font-bold text-gray-800 text-base">{row.waktu}</span>
-                                                                ) : (
-                                                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-orange-500">
-                                                                        <circle cx="12" cy="12" r="10"></circle>
-                                                                        <polyline points="12 6 12 12 16 14"></polyline>
-                                                                    </svg>
-                                                                )}
-                                                            </label>
-                                                        </div>
+                                                        <TimePicker
+                                                            value={row.waktu}
+                                                            onChange={(time) => updateRow(row.id, 'waktu', time)}
+                                                        />
                                                     </td>
                                                     <td className="py-3 px-1">
                                                         <div className="flex items-center gap-2">
