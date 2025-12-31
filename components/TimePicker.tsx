@@ -66,7 +66,7 @@ const TimePicker: React.FC<TimePickerProps> = ({ value, onChange }) => {
                     left: 0,
                     width: '100%',
                     height: '100%',
-                    opacity: 0,
+                    opacity: 0.01,  // Slightly visible to ensure browser treats it as interactive
                     zIndex: 2,
                     cursor: 'pointer',
                     fontSize: '16px',
