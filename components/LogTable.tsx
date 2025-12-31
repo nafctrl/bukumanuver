@@ -65,7 +65,7 @@ const InsertNode: React.FC<InsertNodeProps> = ({ onInsertRow, onInsertSeparator 
     }, [isOpen]);
 
     return (
-        <div ref={menuRef} className="relative flex justify-center items-center z-10 group">
+        <div ref={menuRef} className="relative flex justify-center items-center group">
             {/* Visual Line Connector */}
             <div className="absolute h-full w-px bg-gray-200 group-hover:bg-gray-300 transition-colors"></div>
 

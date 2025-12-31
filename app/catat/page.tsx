@@ -20,28 +20,16 @@ export default function CatatPage() {
         dispa: '',
     });
 
-    const [logRows, setLogRows] = useState<LogRow[]>(() => {
-        // Initial state: 3 empty rows (Client-side only to match requirement)
-        if (typeof window !== 'undefined') {
-            return Array.from({ length: 3 }).map(() => ({
-                id: generateId(),
-                nama_peralatan: '',
-                posisi_switch: false,
-                waktu: '',
-                via: 'R.ACC',
-            }));
-        }
-        return [];
-    });
+    const [logRows, setLogRows] = useState<LogRow[]>([]);
 
-    // Hydration mismatch fix: ensure rows are populated after mount if empty
+    // Initialize rows on client-side only to avoid hydration mismatch
     React.useEffect(() => {
         if (logRows.length === 0) {
             setLogRows(Array.from({ length: 3 }).map(() => ({
                 id: generateId(),
                 nama_peralatan: '',
                 posisi_switch: false,
-                waktu: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
+                waktu: '',
                 via: 'R.ACC',
             })));
         }
