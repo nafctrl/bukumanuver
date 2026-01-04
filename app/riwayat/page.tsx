@@ -6,10 +6,7 @@ import { createClient } from '@/utils/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { APP_VERSION } from '@/components/ChangeLog';
 import Footer from '@/components/Footer';
-import CascadingDropdown from '@/components/CascadingDropdown';
-import TimePicker from '@/components/TimePicker';
-import { generateId } from '@/utils/generateId';
-import { DUMMY_RIWAYAT_DATA } from '@/utils/dummyRiwayatData';
+
 import { DUMMY_RIWAYAT_ITEMS } from '@/utils/dummyRiwayatItems';
 // Extracted components
 import { BayCell } from './components/BayCell';
@@ -21,6 +18,7 @@ import { RiwayatTable } from './components/RiwayatTable';
 import { useBayExtraction } from './hooks/useBayExtraction';
 import { useScrollToTop } from './hooks/useScrollToTop';
 import { useRiwayatHistory } from './hooks/useRiwayatHistory';
+import { useRiwayatCRUD } from './hooks/useRiwayatCRUD';
 
 interface RiwayatManuver {
     id: string;
@@ -82,113 +80,21 @@ export default function RiwayatPage() {
             if (error) throw error;
         }
     });
+    const crud = useRiwayatCRUD(supabase, addToHistory);
+
 
     useEffect(() => {
-        fetchRiwayat();
+        crud.fetchRiwayat();
     }, []);
 
-    const fetchRiwayat = async () => {
-        setIsLoading(true);
-        const { data, error } = await supabase
-            .from('riwayat_manuver')
-            .select('*')
-            .order('created_at', { ascending: false });
-
-        // Merge database data with dummy data (comment out DUMMY_RIWAYAT_DATA to disable)
-        const allData = [...DUMMY_RIWAYAT_DATA, ...(data || [])];
-
-        if (!error) {
-            setRiwayatList(allData);
-        }
-        setIsLoading(false);
-    };
-
-    const fetchItems = async (riwayatId: string) => {
-        setIsLoadingItems(true);
-
-        // If dummy data, use dummy items
-        if (riwayatId.startsWith('dummy-')) {
-            const dummyItems = DUMMY_RIWAYAT_ITEMS[riwayatId] || [];
-            setSelectedItems(dummyItems);
-            setEditedItems(dummyItems);
-            setIsLoadingItems(false);
-            return;
-        }
-
-        // Otherwise fetch from database
-        const { data, error } = await supabase
-            .from('riwayat_items')
-            .select('*')
-            .eq('riwayat_id', riwayatId)
-            .order('created_at', { ascending: true });
-
-        if (!error && data) {
-            setSelectedItems(data);
-            setEditedItems(data);
-        }
-        setIsLoadingItems(false);
-    };
-
-    const handleViewDetail = async (riwayat: RiwayatManuver) => {
-        setSelectedRiwayat(riwayat);
-        await fetchItems(riwayat.id);
-    };
-
-    const handleCloseDetail = () => {
-        setSelectedRiwayat(null);
-        setSelectedItems([]);
-        setIsEditMode(false);
-        setEditedHeader(null);
-        setEditedItems([]);
-    };
-
-    const handleDelete = async (id: string) => {
-        const itemToDelete = riwayatList.find(r => r.id === id);
-        if (!itemToDelete) return;
-
-        // Only delete from database if it's not a dummy item
-        if (!id.startsWith('dummy-')) {
-            const { error } = await supabase
-                .from('riwayat_manuver')
-                .delete()
-                .eq('id', id);
-
-            if (error) return;
-        }
-
-        // Add to history for undo
-        addToHistory(itemToDelete);
-        setRiwayatList(riwayatList.filter(r => r.id !== id));
-    };
 
 
 
-    const handleClearAll = async () => {
-        if (riwayatList.length === 0 || isClearing) return;
 
-        setIsClearing(true);
 
-        // Delete only non-dummy items from database
-        const realItems = riwayatList.filter(r => !r.id.startsWith('dummy-'));
-        if (realItems.length > 0) {
-            const realIds = realItems.map(r => r.id);
-            const { error } = await supabase
-                .from('riwayat_manuver')
-                .delete()
-                .in('id', realIds);
 
-            if (error) {
-                setIsClearing(false);
-                return;
-            }
-        }
 
-        // Clear all from UI (dummy will come back on refresh)
-        setRiwayatList([]);
 
-        setIsClearing(false);
-        setConfirmClearOpen(false);
-    };
 
     const formatDate = (dateString: string) => {
         const date = new Date(dateString);
@@ -204,113 +110,7 @@ export default function RiwayatPage() {
         return `${dayName}, ${day}/${month}/${year}`;
     };
 
-    // === Edit Mode Handlers ===
-    const handleEnableEdit = () => {
-        if (!selectedRiwayat) return;
-        setIsEditMode(true);
-        setEditedHeader({ ...selectedRiwayat });
-        setEditedItems([...selectedItems]);
-    };
 
-    const handleCancelEdit = () => {
-        setIsEditMode(false);
-        setEditedHeader(null);
-        setEditedItems([]);
-    };
-
-    const handleSaveChanges = async () => {
-        if (!selectedRiwayat || !editedHeader) return;
-
-        setIsSaving(true);
-        try {
-            // 1. Update header
-            const { error: headerError } = await supabase
-                .from('riwayat_manuver')
-                .update({
-                    judul_manuver: editedHeader.judul_manuver,
-                    tanggal: editedHeader.tanggal,
-                    gardu_induk: editedHeader.gardu_induk,
-                    pengawas_pekerjaan: editedHeader.pengawas_pekerjaan,
-                    pengawas_k3: editedHeader.pengawas_k3,
-                    pengawas_manuver: editedHeader.pengawas_manuver,
-                    pelaksana_manuver: editedHeader.pelaksana_manuver,
-                    dispatcher: editedHeader.dispatcher,
-                })
-                .eq('id', selectedRiwayat.id);
-
-            if (headerError) throw headerError;
-
-            // 2. Delete existing items
-            const { error: deleteError } = await supabase
-                .from('riwayat_items')
-                .delete()
-                .eq('riwayat_id', selectedRiwayat.id);
-
-            if (deleteError) throw deleteError;
-
-            // 3. Insert updated items
-            const itemsToInsert = editedItems
-                .filter(item => item.nama_peralatan || item.is_separator)
-                .map((item, index) => ({
-                    riwayat_id: selectedRiwayat.id,
-                    nama_peralatan: item.nama_peralatan,
-                    posisi_switch: item.posisi_switch,
-                    waktu: item.waktu,
-                    act: item.act,
-                    order_index: index,
-                    is_separator: item.is_separator || false,
-                }));
-
-            if (itemsToInsert.length > 0) {
-                const { error: insertError } = await supabase
-                    .from('riwayat_items')
-                    .insert(itemsToInsert);
-
-                if (insertError) throw insertError;
-            }
-
-            // 4. Update local state
-            setSelectedRiwayat(editedHeader);
-            await fetchItems(selectedRiwayat.id);
-            await fetchRiwayat(); // Refresh list
-
-            setIsEditMode(false);
-            setEditedHeader(null);
-            setEditedItems([]);
-        } catch (error) {
-            console.error('Error saving changes:', error);
-            alert('Gagal menyimpan perubahan. Silakan coba lagi.');
-        } finally {
-            setIsSaving(false);
-        }
-    };
-
-    const updateEditedItem = (id: string, field: keyof RiwayatItem, value: any) => {
-        setEditedItems(editedItems.map(item =>
-            item.id === id ? { ...item, [field]: value } : item
-        ));
-    };
-
-    const deleteEditedItem = (id: string) => {
-        setEditedItems(editedItems.filter(item => item.id !== id));
-    };
-
-    const addNewItem = () => {
-        const newItem: RiwayatItem = {
-            id: generateId(),
-            nama_peralatan: '',
-            posisi_switch: false,
-            waktu: '',
-            act: 'R.ACC',
-            order_index: editedItems.length,
-            is_separator: false,
-        };
-        setEditedItems([...editedItems, newItem]);
-    };
-
-    const toggleEditedPosition = (id: string, currentPos: boolean) => {
-        updateEditedItem(id, 'posisi_switch', !currentPos);
-    };
 
     // Search handler with debounce for item search
     useEffect(() => {
@@ -362,38 +162,12 @@ export default function RiwayatPage() {
         }, 300);
 
         return () => clearTimeout(timeoutId);
-    }, [searchQuery, riwayatList]);
+    }, [searchQuery, crud.riwayatList]);
 
-    // Helper function to extract unique bay names from items
-    const extractBaysFromItems = async (riwayatId: string): Promise<string[]> => {
-        if (riwayatId.startsWith('dummy-')) {
-            const dummyItems = DUMMY_RIWAYAT_ITEMS[riwayatId] || [];
-            const bays = dummyItems
-                .map(item => {
-                    // Extract bay from equipment name (e.g., "PMS BUS A PEKALONGAN 1" → "PEKALONGAN 1")
-                    const parts = item.nama_peralatan.split(' ');
-                    return parts.slice(-2).join(' '); // Last 2 words typically are bay name
-                })
-                .filter((bay, index, self) => bay && self.indexOf(bay) === index); // Unique only
-            return bays;
-        } else {
-            const { data } = await supabase
-                .from('riwayat_items')
-                .select('nama_peralatan')
-                .eq('riwayat_id', riwayatId);
 
-            const bays = (data || [])
-                .map(item => {
-                    const parts = item.nama_peralatan.split(' ');
-                    return parts.slice(-2).join(' ');
-                })
-                .filter((bay, index, self) => bay && self.indexOf(bay) === index);
-            return bays;
-        }
-    };
 
     // Filter riwayat list based on search query
-    const filteredRiwayatList = riwayatList.filter(riwayat => {
+    const filteredRiwayatList = crud.riwayatList.filter(riwayat => {
         if (!searchQuery.trim()) return true;
 
         const query = searchQuery.toLowerCase();
@@ -482,7 +256,7 @@ export default function RiwayatPage() {
     };
 
     // Use bay extraction hook
-    const riwayatBays = useBayExtraction(riwayatList, sortedList);
+    const riwayatBays = useBayExtraction(crud.riwayatList, sortedList);
 
 
     return (
@@ -537,15 +311,15 @@ export default function RiwayatPage() {
                     </div>
                     {searchQuery && (
                         <p className="mt-2 text-xs text-gray-500">
-                            Ditemukan {filteredRiwayatList.length} dari {riwayatList.length} riwayat
+                            Ditemukan {filteredRiwayatList.length} dari {crud.riwayatList.length} riwayat
                         </p>
                     )}
                 </div>
 
                 {/* Riwayat Table */}
                 <RiwayatTable
-                    riwayatList={riwayatList}
-                    isLoading={isLoading}
+                    riwayatList={crud.riwayatList}
+                    isLoading={crud.isLoading}
                     formatDate={formatDate}
                     riwayatBays={riwayatBays}
                     filterBay={filterBay}
@@ -555,8 +329,8 @@ export default function RiwayatPage() {
                     displayedList={displayedList}
                     hasMore={hasMore}
                     onLoadMore={loadMore}
-                    onViewDetail={handleViewDetail}
-                    onDelete={handleDelete}
+                    onViewDetail={crud.handleViewDetail}
+                    onDelete={crud.handleDelete}
                     undo={undo}
                     canUndo={canUndo}
                     isUndoing={isUndoing}
@@ -567,22 +341,22 @@ export default function RiwayatPage() {
 
                 {/* Detail Modal */}
                 < DetailModal
-                    selectedRiwayat={selectedRiwayat}
-                    selectedItems={selectedItems}
-                    isEditMode={isEditMode}
-                    editedHeader={editedHeader}
-                    editedItems={editedItems}
-                    isLoadingItems={isLoadingItems}
-                    isSaving={isSaving}
-                    onClose={handleCloseDetail}
-                    onEnableEdit={handleEnableEdit}
-                    onCancelEdit={handleCancelEdit}
-                    onSaveChanges={handleSaveChanges}
-                    onUpdateItem={updateEditedItem}
-                    onDeleteItem={deleteEditedItem}
-                    onAddNewItem={addNewItem}
-                    onTogglePosition={toggleEditedPosition}
-                    onUpdateHeader={setEditedHeader}
+                    selectedRiwayat={crud.selectedRiwayat}
+                    selectedItems={crud.selectedItems}
+                    isEditMode={crud.isEditMode}
+                    editedHeader={crud.editedHeader}
+                    editedItems={crud.editedItems}
+                    isLoadingItems={crud.isLoadingItems}
+                    isSaving={crud.isSaving}
+                    onClose={crud.handleCloseDetail}
+                    onEnableEdit={crud.handleEnableEdit}
+                    onCancelEdit={crud.handleCancelEdit}
+                    onSaveChanges={crud.handleSaveChanges}
+                    onUpdateItem={crud.updateEditedItem}
+                    onDeleteItem={crud.deleteEditedItem}
+                    onAddNewItem={crud.addNewItem}
+                    onTogglePosition={crud.toggleEditedPosition}
+                    onUpdateHeader={crud.setEditedHeader}
                     formatDateWithDay={formatDateWithDay}
                 />
 
@@ -590,8 +364,8 @@ export default function RiwayatPage() {
                 < ConfirmClearModal
                     isOpen={confirmClearOpen}
                     onClose={() => setConfirmClearOpen(false)}
-                    onConfirm={handleClearAll}
-                    isClearing={isClearing}
+                    onConfirm={crud.handleClearAll}
+                    isClearing={crud.isClearing}
                 />
 
                 {/* Scroll to Top Button */}
