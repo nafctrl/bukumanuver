@@ -68,7 +68,7 @@ export default function CatatPage() {
                 .insert({
                     judul_manuver: headerData.judul_manuver,
                     tanggal: headerData.tanggal,
-                    kode_gardu: headerData.kode_gardu,
+                    kode_gardu: profile?.kode_gardu || 'unknown', // Use actual kode_gardu, not display name
                     pengawas_pekerjaan: headerData.pengawas_pekerjaan,
                     pengawas_k3: headerData.pengawas_k3,
                     pengawas_manuver: headerData.pengawas_manuver,
