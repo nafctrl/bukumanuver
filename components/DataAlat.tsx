@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createClient } from '@/utils/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePeralatan, PeralatanRow } from '@/utils/hooks/usePeralatan';
 
 // Konfigurasi Gardu Induk (untuk multi-login di masa depan)
 // TODO: Ganti dengan dynamic dari AuthContext setelah login terintegrasi
@@ -53,11 +54,9 @@ function parseEquipmentName(name: string): { type: string; section: string } {
 }
 
 export default function DataAlat() {
-    const [equipmentList, setEquipmentList] = useState<Equipment[]>([]);
     // Undo stack: stores action type and affected item (for edit: also stores old values)
     const [history, setHistory] = useState<{ action: 'add' | 'delete' | 'edit'; item: Equipment; oldItem?: Equipment }[]>([]);
     const [isUndoing, setIsUndoing] = useState(false);
-    const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [newEquipment, setNewEquipment] = useState({ name: '', bay: '' });
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
@@ -73,16 +72,34 @@ export default function DataAlat() {
 
     const supabase = createClient();
     const { profile, isMaster } = useAuth();
+    // Use SWR for equipment data - no manual fetching needed!
+    const { rawEquipmentList, isLoading, refresh: refreshEquipmentCache } = usePeralatan();
+
+    // Local state for optimistic updates & undo (synced from SWR)
+    const [equipmentList, setEquipmentList] = useState<Equipment[]>([]);
+
+    // Sync local state from SWR when data changes
+    useEffect(() => {
+        if (rawEquipmentList.length > 0 || !isLoading) {
+            // Map SWR raw data to local Equipment format
+            const mapped: Equipment[] = rawEquipmentList.map((row: PeralatanRow) => ({
+                id: row.id,
+                nama_lengkap: row.nama_lengkap,
+                type: row.type,
+                section: row.section,
+                bay: row.bay,
+                kode_gardu: row.kode_gardu,
+                created_at: row.created_at,
+                updated_at: row.updated_at,
+            }));
+            setEquipmentList(mapped);
+            // After initial sync, enable animations
+            setTimeout(() => setIsInitialLoad(false), 100);
+        }
+    }, [rawEquipmentList, isLoading]);
 
     // Get current user's kode_gardu
     const userKodeGardu = profile?.kode_gardu || KODE_GARDU;
-
-    // Fetch data from Supabase on mount & when profile changes
-    useEffect(() => {
-        if (profile || isMaster) {
-            fetchEquipment();
-        }
-    }, [profile, isMaster]);
 
     // Auto-scroll to top when new row added
     useEffect(() => {
@@ -90,32 +107,6 @@ export default function DataAlat() {
             tableContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
         }
     }, [newRowId]);
-
-    const fetchEquipment = async () => {
-        setIsLoading(true);
-
-        // Build query - master sees all, others see only their gardu
-        let query = supabase
-            .from('peralatan')
-            .select('*')
-            .order('created_at', { ascending: false });
-
-        // Filter by kode_gardu if not master
-        if (!isMaster && userKodeGardu) {
-            query = query.eq('kode_gardu', userKodeGardu);
-        }
-
-        const { data, error } = await query;
-
-        if (error) {
-            console.error('Error fetching equipment:', error);
-        } else {
-            setEquipmentList(data || []);
-        }
-        setIsLoading(false);
-        // After initial load, enable animations
-        setTimeout(() => setIsInitialLoad(false), 100);
-    };
 
     const pushToHistory = (action: 'add' | 'delete' | 'edit', item: Equipment, oldItem?: Equipment) => {
         setHistory((prev) => [...prev.slice(-19), { action, item, oldItem }]); // Keep max 20 history
@@ -138,6 +129,7 @@ export default function DataAlat() {
                 if (!error) {
                     setEquipmentList((prev) => prev.filter((item) => item.id !== lastAction.item.id));
                     setHistory((prev) => prev.slice(0, -1));
+                    refreshEquipmentCache(); // Sync SWR cache
                 } else {
                     console.error('Undo add failed:', error);
                 }
@@ -159,6 +151,7 @@ export default function DataAlat() {
                 if (!error && data) {
                     setEquipmentList((prev) => [data, ...prev]);
                     setHistory((prev) => prev.slice(0, -1));
+                    refreshEquipmentCache(); // Sync SWR cache
                 } else {
                     console.error('Undo delete failed:', error);
                 }
@@ -179,6 +172,7 @@ export default function DataAlat() {
                         item.id === lastAction.oldItem!.id ? lastAction.oldItem! : item
                     ));
                     setHistory((prev) => prev.slice(0, -1));
+                    refreshEquipmentCache(); // Sync SWR cache
                 } else {
                     console.error('Undo edit failed:', error);
                 }
@@ -250,6 +244,7 @@ export default function DataAlat() {
                 setNewEquipment({ name: '', bay: '' });
                 setNewRowId(data.id);
                 setTimeout(() => setNewRowId(null), 600);
+                refreshEquipmentCache(); // Sync SWR cache for other components
             }
         } catch (err) {
             console.error('Error:', err);
@@ -274,6 +269,7 @@ export default function DataAlat() {
         } else {
             pushToHistory('delete', itemToDelete);
             setEquipmentList(equipmentList.filter((item) => item.id !== id));
+            refreshEquipmentCache(); // Sync SWR cache
         }
     };
 
@@ -288,6 +284,7 @@ export default function DataAlat() {
             console.error('Error clearing all:', error);
         } else {
             setEquipmentList([]);
+            refreshEquipmentCache(); // Sync SWR cache
         }
         setIsConfirmOpen(false);
     };
@@ -380,6 +377,7 @@ export default function DataAlat() {
                 setEquipmentList(prev => prev.map(item =>
                     item.id === editingItem.id ? updatedItem : item
                 ));
+                refreshEquipmentCache(); // Sync SWR cache
 
                 // Close modal
                 setEditingItem(null);
@@ -593,7 +591,7 @@ export default function DataAlat() {
                     ← Geser untuk melihat tabel →
                 </div>
                 <button
-                    onClick={() => fetchEquipment()}
+                    onClick={() => refreshEquipmentCache()}
                     className="text-xs font-medium px-3 py-1 rounded transition-colors bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700 ml-auto"
                     title="Refresh Data dari Server"
                 >

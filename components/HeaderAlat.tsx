@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import Link from 'next/link';
-import { createClient } from '@/utils/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePeralatan } from '@/utils/hooks/usePeralatan';
 
 interface HeaderStats {
     nama_gardu: string;
@@ -15,66 +15,36 @@ interface HeaderStats {
 
 export default function HeaderAlat() {
     const { profile, isMaster } = useAuth();
+    const { equipmentList, isLoading } = usePeralatan();
 
-    const [headerStats, setHeaderStats] = useState<HeaderStats>({
-        nama_gardu: '...',
-        total_bay: 0,
-        total_pms: 0,
-        total_pmt_150: 0,
-        total_pmt_20: 0,
-    });
-    const [isLoading, setIsLoading] = useState(true);
-
-    const supabase = createClient();
-
-    // Fetch when profile changes
-    useEffect(() => {
-        if (profile || isMaster) {
-            fetchStats();
-        }
-    }, [profile, isMaster]);
-
-    const fetchStats = async () => {
-        setIsLoading(true);
-
-        // Build query - master sees all, others see only their gardu
-        let query = supabase
-            .from('peralatan')
-            .select('type, section, bay');
-
-        // Filter by kode_gardu if not master
-        if (!isMaster && profile?.kode_gardu) {
-            query = query.eq('kode_gardu', profile.kode_gardu);
-        }
-
-        const { data, error } = await query;
-
-        if (error) {
-            console.error('Error fetching stats:', error);
-            setIsLoading(false);
-            return;
-        }
-
-        if (data) {
-            // Calculate stats
-            const uniqueBays = new Set(data.map(item => item.bay));
-            const pmsCount = data.filter(item => item.type === 'PMS').length;
-            const pmt150Count = data.filter(item => item.type === 'PMT' && item.section?.includes('150')).length;
-            const pmt20Count = data.filter(item => item.type === 'PMT' && item.section?.includes('20')).length;
-
-            // Get display name from profile
+    // Calculate stats from cached equipment data (no extra fetch)
+    const headerStats = useMemo<HeaderStats>(() => {
+        if (equipmentList.length === 0) {
             const displayName = profile?.nama_gardu || `GI ${profile?.kode_gardu?.toUpperCase() || '...'}`;
-
-            setHeaderStats({
+            return {
                 nama_gardu: isMaster ? 'Master (All GI)' : displayName,
-                total_bay: uniqueBays.size,
-                total_pms: pmsCount,
-                total_pmt_150: pmt150Count,
-                total_pmt_20: pmt20Count,
-            });
+                total_bay: 0,
+                total_pms: 0,
+                total_pmt_150: 0,
+                total_pmt_20: 0,
+            };
         }
-        setIsLoading(false);
-    };
+
+        const uniqueBays = new Set(equipmentList.map(item => item.level_3));
+        const pmsCount = equipmentList.filter(item => item.level_1 === 'PMS').length;
+        const pmt150Count = equipmentList.filter(item => item.level_1 === 'PMT' && item.level_2?.includes('150')).length;
+        const pmt20Count = equipmentList.filter(item => item.level_1 === 'PMT' && item.level_2?.includes('20')).length;
+
+        const displayName = profile?.nama_gardu || `GI ${profile?.kode_gardu?.toUpperCase() || '...'}`;
+
+        return {
+            nama_gardu: isMaster ? 'Master (All GI)' : displayName,
+            total_bay: uniqueBays.size,
+            total_pms: pmsCount,
+            total_pmt_150: pmt150Count,
+            total_pmt_20: pmt20Count,
+        };
+    }, [equipmentList, profile, isMaster]);
 
     return (
         <>

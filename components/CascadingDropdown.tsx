@@ -3,15 +3,13 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    Equipment,
-    fetchEquipmentData,
+    usePeralatan,
     getUniqueLevel1,
     getLevel2ByLevel1,
     getLevel3ByLevel1And2,
     getEquipmentByLevels,
     getEquipmentByFullLabel,
-} from '@/data/equipment';
-import { useAuth } from '@/contexts/AuthContext';
+} from '@/utils/hooks/usePeralatan';
 
 interface CascadingDropdownProps {
     value?: string;
@@ -20,11 +18,8 @@ interface CascadingDropdownProps {
 }
 
 const CascadingDropdown: React.FC<CascadingDropdownProps> = ({ value, onSelect, className }) => {
-    const { profile, isMaster } = useAuth();
-
-    // Equipment data from Supabase
-    const [equipmentData, setEquipmentData] = useState<Equipment[]>([]);
-    const [isLoadingData, setIsLoadingData] = useState(true);
+    // Use global SWR hook for equipment data (cached, no duplicate requests)
+    const { equipmentList: equipmentData, isLoading: isLoadingData } = usePeralatan();
 
     // Modal Visibility State
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -34,19 +29,6 @@ const CascadingDropdown: React.FC<CascadingDropdownProps> = ({ value, onSelect, 
     const [level1, setLevel1] = useState<string | null>(null);
     const [level2, setLevel2] = useState<string | null>(null);
     const [level3, setLevel3] = useState<string | null>(null);
-
-    // Fetch equipment data when profile is available
-    useEffect(() => {
-        const loadData = async () => {
-            if (!profile && !isMaster) return; // Wait for auth
-
-            setIsLoadingData(true);
-            const data = await fetchEquipmentData(profile?.kode_gardu, isMaster);
-            setEquipmentData(data);
-            setIsLoadingData(false);
-        };
-        loadData();
-    }, [profile, isMaster]);
 
     // Initial Trigger Render
     const openModal = () => {
