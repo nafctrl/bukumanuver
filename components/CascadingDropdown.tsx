@@ -11,6 +11,7 @@ import {
     getEquipmentByLevels,
     getEquipmentByFullLabel,
 } from '@/data/equipment';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface CascadingDropdownProps {
     value?: string;
@@ -19,6 +20,8 @@ interface CascadingDropdownProps {
 }
 
 const CascadingDropdown: React.FC<CascadingDropdownProps> = ({ value, onSelect, className }) => {
+    const { profile, isMaster } = useAuth();
+
     // Equipment data from Supabase
     const [equipmentData, setEquipmentData] = useState<Equipment[]>([]);
     const [isLoadingData, setIsLoadingData] = useState(true);
@@ -32,16 +35,18 @@ const CascadingDropdown: React.FC<CascadingDropdownProps> = ({ value, onSelect, 
     const [level2, setLevel2] = useState<string | null>(null);
     const [level3, setLevel3] = useState<string | null>(null);
 
-    // Fetch equipment data on mount
+    // Fetch equipment data when profile is available
     useEffect(() => {
         const loadData = async () => {
+            if (!profile && !isMaster) return; // Wait for auth
+
             setIsLoadingData(true);
-            const data = await fetchEquipmentData();
+            const data = await fetchEquipmentData(profile?.kode_gardu, isMaster);
             setEquipmentData(data);
             setIsLoadingData(false);
         };
         loadData();
-    }, []);
+    }, [profile, isMaster]);
 
     // Initial Trigger Render
     const openModal = () => {

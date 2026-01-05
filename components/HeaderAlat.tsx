@@ -3,9 +3,10 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface HeaderStats {
-    gardu_induk: string;
+    nama_gardu: string;
     total_bay: number;
     total_pms: number;
     total_pmt_150: number;
@@ -13,8 +14,10 @@ interface HeaderStats {
 }
 
 export default function HeaderAlat() {
+    const { profile, isMaster } = useAuth();
+
     const [headerStats, setHeaderStats] = useState<HeaderStats>({
-        gardu_induk: 'GI 150 kV BATANG',
+        nama_gardu: '...',
         total_bay: 0,
         total_pms: 0,
         total_pmt_150: 0,
@@ -24,39 +27,54 @@ export default function HeaderAlat() {
 
     const supabase = createClient();
 
+    // Fetch when profile changes
     useEffect(() => {
-        const fetchStats = async () => {
-            setIsLoading(true);
-            const { data, error } = await supabase
-                .from('peralatan')
-                .select('type, section, bay');
+        if (profile || isMaster) {
+            fetchStats();
+        }
+    }, [profile, isMaster]);
 
-            if (error) {
-                console.error('Error fetching stats:', error);
-                setIsLoading(false);
-                return;
-            }
+    const fetchStats = async () => {
+        setIsLoading(true);
 
-            if (data) {
-                // Calculate stats
-                const uniqueBays = new Set(data.map(item => item.bay));
-                const pmsCount = data.filter(item => item.type === 'PMS').length;
-                const pmt150Count = data.filter(item => item.type === 'PMT' && item.section?.includes('150')).length;
-                const pmt20Count = data.filter(item => item.type === 'PMT' && item.section?.includes('20')).length;
+        // Build query - master sees all, others see only their gardu
+        let query = supabase
+            .from('peralatan')
+            .select('type, section, bay');
 
-                setHeaderStats({
-                    gardu_induk: '150 kV Batang',
-                    total_bay: uniqueBays.size,
-                    total_pms: pmsCount,
-                    total_pmt_150: pmt150Count,
-                    total_pmt_20: pmt20Count,
-                });
-            }
+        // Filter by kode_gardu if not master
+        if (!isMaster && profile?.kode_gardu) {
+            query = query.eq('kode_gardu', profile.kode_gardu);
+        }
+
+        const { data, error } = await query;
+
+        if (error) {
+            console.error('Error fetching stats:', error);
             setIsLoading(false);
-        };
+            return;
+        }
 
-        fetchStats();
-    }, []);
+        if (data) {
+            // Calculate stats
+            const uniqueBays = new Set(data.map(item => item.bay));
+            const pmsCount = data.filter(item => item.type === 'PMS').length;
+            const pmt150Count = data.filter(item => item.type === 'PMT' && item.section?.includes('150')).length;
+            const pmt20Count = data.filter(item => item.type === 'PMT' && item.section?.includes('20')).length;
+
+            // Get display name from profile
+            const displayName = profile?.nama_gardu || `GI ${profile?.kode_gardu?.toUpperCase() || '...'}`;
+
+            setHeaderStats({
+                nama_gardu: isMaster ? 'Master (All GI)' : displayName,
+                total_bay: uniqueBays.size,
+                total_pms: pmsCount,
+                total_pmt_150: pmt150Count,
+                total_pmt_20: pmt20Count,
+            });
+        }
+        setIsLoading(false);
+    };
 
     return (
         <>
@@ -79,7 +97,7 @@ export default function HeaderAlat() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                 <div className="bg-white p-4 rounded-xl border border-orange-100 shadow-sm">
                     <p className="text-xs text-gray-500 mb-1 uppercase tracking-wider font-semibold">Gardu Induk</p>
-                    <p className="text-lg font-bold text-orange-600 truncate">{headerStats.gardu_induk}</p>
+                    <p className="text-lg font-bold text-orange-600 truncate">{headerStats.nama_gardu}</p>
                 </div>
                 <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
                     <p className="text-xs text-gray-500 mb-1 uppercase tracking-wider font-semibold">Total Bay</p>

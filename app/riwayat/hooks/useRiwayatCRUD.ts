@@ -28,7 +28,7 @@ interface RiwayatManuver {
     id: string;
     judul_manuver: string;
     tanggal: string;
-    gardu_induk: string;
+    kode_gardu: string;
     pengawas_pekerjaan: string;
     pengawas_k3: string;
     pengawas_manuver: string;
@@ -49,7 +49,9 @@ interface RiwayatItem {
 
 export function useRiwayatCRUD(
     supabase: SupabaseClient,
-    addToHistory: (item: RiwayatManuver) => void
+    addToHistory: (item: RiwayatManuver) => void,
+    profile: { kode_gardu: string } | null,
+    isMaster: boolean
 ) {
     // Data states
     const [riwayatList, setRiwayatList] = useState<RiwayatManuver[]>([]);
@@ -67,19 +69,27 @@ export function useRiwayatCRUD(
     const [isSaving, setIsSaving] = useState(false);
     const [isClearing, setIsClearing] = useState(false);
 
-    // Fetch all riwayat
+    // Fetch all riwayat - filtered by kode_gardu for non-master users
     const fetchRiwayat = useCallback(async () => {
         setIsLoading(true);
-        const { data, error } = await supabase
+
+        let query = supabase
             .from('riwayat_manuver')
             .select('*')
             .order('created_at', { ascending: false });
+
+        // Filter by kode_gardu if not master
+        if (!isMaster && profile?.kode_gardu) {
+            query = query.eq('kode_gardu', profile.kode_gardu);
+        }
+
+        const { data, error } = await query;
 
         if (!error) {
             setRiwayatList(data || []);
         }
         setIsLoading(false);
-    }, [supabase]);
+    }, [supabase, profile, isMaster]);
 
     // Fetch items for a specific riwayat
     const fetchItems = useCallback(async (riwayatId: string) => {
@@ -186,7 +196,7 @@ export function useRiwayatCRUD(
                 .update({
                     judul_manuver: editedHeader.judul_manuver,
                     tanggal: editedHeader.tanggal,
-                    gardu_induk: editedHeader.gardu_induk,
+                    kode_gardu: editedHeader.kode_gardu,
                     pengawas_pekerjaan: editedHeader.pengawas_pekerjaan,
                     pengawas_k3: editedHeader.pengawas_k3,
                     pengawas_manuver: editedHeader.pengawas_manuver,

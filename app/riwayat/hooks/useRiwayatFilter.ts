@@ -112,7 +112,7 @@ export function useRiwayatFilter(riwayatList: RiwayatManuver[]) {
 
             const matchesHeader =
                 (riwayat.judul_manuver?.toLowerCase().includes(query)) ||
-                (riwayat.gardu_induk?.toLowerCase().includes(query)) ||
+                (riwayat.kode_gardu?.toLowerCase().includes(query)) ||
                 (riwayat.pengawas_pekerjaan?.toLowerCase().includes(query)) ||
                 (riwayat.pengawas_k3?.toLowerCase().includes(query)) ||
                 (riwayat.pengawas_manuver?.toLowerCase().includes(query)) ||

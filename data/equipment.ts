@@ -19,15 +19,26 @@ function mapToEquipment(row: any): Equipment {
     };
 }
 
-// Fetch all equipment from Supabase
-export async function fetchEquipmentData(): Promise<Equipment[]> {
+// Fetch equipment from Supabase with optional kode_gardu filter
+export async function fetchEquipmentData(
+    kodeGardu?: string,
+    isMaster?: boolean
+): Promise<Equipment[]> {
     const supabase = createClient();
-    const { data, error } = await supabase
+
+    let query = supabase
         .from('peralatan')
         .select('id, type, section, bay, nama_lengkap')
         .order('type', { ascending: true })
         .order('section', { ascending: true })
         .order('bay', { ascending: true });
+
+    // Filter by kode_gardu if not master and kodeGardu is provided
+    if (!isMaster && kodeGardu) {
+        query = query.eq('kode_gardu', kodeGardu);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
         console.error('Error fetching equipment:', error);

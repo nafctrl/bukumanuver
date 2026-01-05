@@ -18,7 +18,7 @@ interface RiwayatManuver {
     id: string;
     judul_manuver: string;
     tanggal: string;
-    gardu_induk: string;
+    kode_gardu: string;
     pengawas_pekerjaan: string;
     pengawas_k3: string;
     pengawas_manuver: string;
@@ -67,8 +67,8 @@ export const DetailModalHeader: React.FC<DetailModalHeaderProps> = ({
                         <div className="flex gap-2 text-xs">
                             <input
                                 type="text"
-                                value={editedHeader.gardu_induk}
-                                onChange={(e) => onUpdateHeader({ ...editedHeader, gardu_induk: e.target.value })}
+                                value={editedHeader.kode_gardu}
+                                onChange={(e) => onUpdateHeader({ ...editedHeader, kode_gardu: e.target.value })}
                                 placeholder="GI"
                                 className="flex-1 min-w-0 text-gray-600 bg-white border border-gray-300 rounded px-2 py-1 focus:outline-none focus:border-orange-400"
                             />
@@ -86,7 +86,7 @@ export const DetailModalHeader: React.FC<DetailModalHeaderProps> = ({
                             {selectedRiwayat.judul_manuver || 'Detail Manuver'}
                         </h2>
                         <p className="text-sm text-gray-500 truncate">
-                            {selectedRiwayat.gardu_induk} • {formatDateWithDay(selectedRiwayat.tanggal)}
+                            {selectedRiwayat.kode_gardu} • {formatDateWithDay(selectedRiwayat.tanggal)}
                         </p>
                     </>
                 )}

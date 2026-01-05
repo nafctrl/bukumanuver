@@ -11,7 +11,7 @@ interface ChangeLogEntry {
 // ============================================================================
 // VERSION NUMBER - Update this when releasing new versions
 // ============================================================================
-export const APP_VERSION = 'v1.0.1 Beta';
+export const APP_VERSION = 'v1.1.0 Beta';
 
 // ============================================================================
 // CHANGELOG DATA - Add new entries at the TOP of this array
@@ -29,8 +29,18 @@ export const APP_VERSION = 'v1.0.1 Beta';
 const changelog: ChangeLogEntry[] = [
     // ↓↓↓ TAMBAHKAN VERSI BARU DI SINI (paling atas) ↓↓↓
     {
+        version: 'v1.1.0 Beta',
+        date: '05/01/2026',
+        changes: [
+            'Added Riwayat Manuver features',
+            'Added login features',
+            'Is now ready for open beta testing'
+
+        ]
+    },
+    {
         version: 'v1.0.1 Beta',
-        date: '31/12/2024',
+        date: '31/12/2025',
         changes: [
             'Bug fixes',
             'Minor updates',
@@ -39,7 +49,7 @@ const changelog: ChangeLogEntry[] = [
     },
     {
         version: 'v1.0.0 Beta',
-        date: '26/12/2024',
+        date: '26/12/2025',
         changes: [
             'Closed Beta Version Released',
 

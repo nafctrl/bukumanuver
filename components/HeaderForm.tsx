@@ -6,7 +6,7 @@ interface HeaderFormProps {
     formData: {
         judul_manuver: string;
         tanggal: string;
-        gardu_induk: string;
+        kode_gardu: string;
         pengawas_pekerjaan: string;
         pengawas_k3: string;
         pengawas_manuver: string;
@@ -57,11 +57,11 @@ const HeaderForm: React.FC<HeaderFormProps> = ({ formData, onChange }) => {
                     </label>
                     <input
                         type="text"
-                        name="gardu_induk"
-                        value={formData.gardu_induk}
+                        name="kode_gardu"
+                        value={formData.kode_gardu}
                         onChange={onChange}
                         className="w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-300 transition-all"
-                        placeholder="Contoh: GI BREBES"
+                        placeholder="Contoh: GI 150 KV Batang"
                     />
                 </div>
 

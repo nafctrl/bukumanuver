@@ -3,12 +3,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createClient } from '@/utils/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Konfigurasi Gardu Induk (untuk multi-login di masa depan)
-const GARDU_INDUK = {
-    nama_lengkap: 'Gardu Induk 150kV Batang',  // Untuk display/visual
-    nama_db: 'BATANG',                          // Untuk disimpan ke Supabase
-};
+// TODO: Ganti dengan dynamic dari AuthContext setelah login terintegrasi
+const KODE_GARDU = 'batang';  // Sekarang lowercase, nanti dari auth context
 
 // Types
 interface Equipment {
@@ -17,7 +16,7 @@ interface Equipment {
     type: string;
     section: string;
     bay: string;
-    gardu_induk?: string;
+    kode_gardu?: string;
     created_at?: string;
     updated_at?: string;  // Timestamp saat terakhir diedit
 }
@@ -73,11 +72,17 @@ export default function DataAlat() {
     const tableContainerRef = useRef<HTMLDivElement>(null);
 
     const supabase = createClient();
+    const { profile, isMaster } = useAuth();
 
-    // Fetch data from Supabase on mount
+    // Get current user's kode_gardu
+    const userKodeGardu = profile?.kode_gardu || KODE_GARDU;
+
+    // Fetch data from Supabase on mount & when profile changes
     useEffect(() => {
-        fetchEquipment();
-    }, []);
+        if (profile || isMaster) {
+            fetchEquipment();
+        }
+    }, [profile, isMaster]);
 
     // Auto-scroll to top when new row added
     useEffect(() => {
@@ -88,10 +93,19 @@ export default function DataAlat() {
 
     const fetchEquipment = async () => {
         setIsLoading(true);
-        const { data, error } = await supabase
+
+        // Build query - master sees all, others see only their gardu
+        let query = supabase
             .from('peralatan')
             .select('*')
             .order('created_at', { ascending: false });
+
+        // Filter by kode_gardu if not master
+        if (!isMaster && userKodeGardu) {
+            query = query.eq('kode_gardu', userKodeGardu);
+        }
+
+        const { data, error } = await query;
 
         if (error) {
             console.error('Error fetching equipment:', error);
@@ -137,7 +151,7 @@ export default function DataAlat() {
                         type: lastAction.item.type,
                         section: lastAction.item.section,
                         bay: lastAction.item.bay,
-                        gardu_induk: lastAction.item.gardu_induk || GARDU_INDUK.nama_db
+                        kode_gardu: lastAction.item.kode_gardu || userKodeGardu
                     })
                     .select()
                     .single();
@@ -221,7 +235,7 @@ export default function DataAlat() {
                     type: type,
                     section: section,
                     bay: trimmedBay,
-                    gardu_induk: GARDU_INDUK.nama_db
+                    kode_gardu: userKodeGardu
                 })
                 .select()
                 .single();

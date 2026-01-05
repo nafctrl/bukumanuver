@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { APP_VERSION } from '@/components/ChangeLog';
 import Footer from '@/components/Footer';
@@ -22,7 +23,7 @@ interface RiwayatManuver {
     id: string;
     judul_manuver: string;
     tanggal: string;
-    gardu_induk: string;
+    kode_gardu: string;
     pengawas_pekerjaan: string;
     pengawas_k3: string;
     pengawas_manuver: string;
@@ -67,6 +68,7 @@ export default function RiwayatPage() {
     const [displayCount, setDisplayCount] = useState(15); // Show 15 items initially
 
     const supabase = createClient();
+    const { profile, isMaster } = useAuth();
 
     // Custom hooks
     const { showScrollTop, scrollToTop } = useScrollToTop();
@@ -78,12 +80,14 @@ export default function RiwayatPage() {
             if (error) throw error;
         }
     });
-    const crud = useRiwayatCRUD(supabase, addToHistory);
+    const crud = useRiwayatCRUD(supabase, addToHistory, profile, isMaster);
 
 
     useEffect(() => {
-        crud.fetchRiwayat();
-    }, []);
+        if (profile || isMaster) {
+            crud.fetchRiwayat();
+        }
+    }, [profile, isMaster]);
 
 
 
@@ -200,7 +204,7 @@ export default function RiwayatPage() {
         // Search in header fields
         const matchesHeader =
             (riwayat.judul_manuver?.toLowerCase().includes(query)) ||
-            (riwayat.gardu_induk?.toLowerCase().includes(query)) ||
+            (riwayat.kode_gardu?.toLowerCase().includes(query)) ||
             (riwayat.pengawas_pekerjaan?.toLowerCase().includes(query)) ||
             (riwayat.pengawas_k3?.toLowerCase().includes(query)) ||
             (riwayat.pengawas_manuver?.toLowerCase().includes(query)) ||

@@ -13,7 +13,7 @@ export interface RiwayatManuver {
     id: string;
     judul_manuver: string;
     tanggal: string;
-    gardu_induk: string;
+    kode_gardu: string;
     pengawas_pekerjaan: string;
     pengawas_k3: string;
     pengawas_manuver: string;

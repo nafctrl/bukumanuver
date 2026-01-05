@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { VersionBadgeClickable } from '@/components/ChangeLog';
 import Footer from '@/components/Footer';
+import SessionCapsule from '@/components/SessionCapsule';
 
 export default function Home() {
   const menuItems = [
@@ -13,6 +14,11 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-[#fdfbf7] text-gray-800 p-4 md:p-8 font-sans flex flex-col">
+      {/* Top Bar: Session Capsule with Logout */}
+      <div className="flex justify-end mb-4">
+        <SessionCapsule />
+      </div>
+
       <div className="max-w-3xl mx-auto w-full flex-1 flex flex-col justify-center py-12">
         {/* Header */}
         <div className="text-center mb-12">

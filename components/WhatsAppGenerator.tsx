@@ -7,7 +7,7 @@ interface WhatsAppGeneratorProps {
     header: {
         judul_manuver: string;
         tanggal: string;
-        gardu_induk: string;
+        kode_gardu: string;
         pengawas_pekerjaan: string;
         pengawas_k3: string;
         pengawas_manuver: string;
@@ -37,7 +37,7 @@ const WhatsAppGenerator: React.FC<WhatsAppGeneratorProps> = ({ header, rows }) =
         const formattedDate = header.tanggal ? new Date(header.tanggal).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : '-';
 
         // Normalize GI name to prevent "GI GI BATANG" issue
-        const giName = normalizeGIName(header.gardu_induk) || '...';
+        const giName = normalizeGIName(header.kode_gardu) || '...';
 
         // Format rows: PMS BUS A BREBES 1 # 12.55 (R.ACC)
         // Separators output as dashed line

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import HeaderForm from '@/components/HeaderForm';
 import LogTable, { LogRow } from '@/components/LogTable';
 import WhatsAppGenerator from '@/components/WhatsAppGenerator';
@@ -9,12 +9,15 @@ import { generateId } from '@/utils/generateId';
 import { APP_VERSION } from '@/components/ChangeLog';
 import { createClient } from '@/utils/supabase/client';
 import Footer from '@/components/Footer';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function CatatPage() {
+    const { profile } = useAuth();
+
     const [headerData, setHeaderData] = useState({
         judul_manuver: '',
         tanggal: new Date().toISOString().split('T')[0],
-        gardu_induk: 'GI Batang',
+        kode_gardu: '',
         pengawas_pekerjaan: '',
         pengawas_k3: '',
         pengawas_manuver: '',
@@ -25,6 +28,14 @@ export default function CatatPage() {
     const [logRows, setLogRows] = useState<LogRow[]>([]);
     const [isSaving, setIsSaving] = useState(false);
     const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+    // Update kode_gardu when profile is loaded - format: "GI 150 KV Batang"
+    useEffect(() => {
+        if (profile?.kode_gardu) {
+            const formattedGardu = profile.nama_gardu || `GI 150 KV ${profile.kode_gardu.charAt(0).toUpperCase() + profile.kode_gardu.slice(1)}`;
+            setHeaderData(prev => ({ ...prev, kode_gardu: formattedGardu }));
+        }
+    }, [profile]);
 
     // Initialize rows on client-side only to avoid hydration mismatch
     React.useEffect(() => {
@@ -57,7 +68,7 @@ export default function CatatPage() {
                 .insert({
                     judul_manuver: headerData.judul_manuver,
                     tanggal: headerData.tanggal,
-                    gardu_induk: headerData.gardu_induk,
+                    kode_gardu: headerData.kode_gardu,
                     pengawas_pekerjaan: headerData.pengawas_pekerjaan,
                     pengawas_k3: headerData.pengawas_k3,
                     pengawas_manuver: headerData.pengawas_manuver,

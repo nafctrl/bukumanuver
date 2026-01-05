@@ -29,18 +29,22 @@ export async function updateSession(request: NextRequest) {
         }
     )
 
-    // IMPORTANT: You *must* return the supabaseResponse object as it is. If you're
-    // creating a new Response object with NextResponse.next() make sure to:
-    // 1. Pass the request in it, like so:
-    //    const myNewResponse = NextResponse.next({ request })
-    // 2. Copy over the cookies, like so:
-    //    myNewResponse.cookies.setAll(supabaseResponse.cookies.getAll())
-    // 3. Change the myNewResponse object to fit your needs, but avoid changing
-    //    the cookies!
-    // 4. Finally:
-    //    return myNewResponse
-    // If this is not done, you may be causing the browser and server to go out
-    // of sync and terminate the user's session prematurely!
+    // Get current user session
+    const { data: { user } } = await supabase.auth.getUser()
+
+    const { pathname } = request.nextUrl
+
+    // Rule 1: If NOT logged in and trying to access protected route -> redirect to /login
+    if (!user && pathname !== '/login') {
+        const loginUrl = new URL('/login', request.url)
+        return NextResponse.redirect(loginUrl)
+    }
+
+    // Rule 2: If logged in and trying to access /login -> redirect to dashboard
+    if (user && pathname === '/login') {
+        const dashboardUrl = new URL('/', request.url)
+        return NextResponse.redirect(dashboardUrl)
+    }
 
     return supabaseResponse
 }
