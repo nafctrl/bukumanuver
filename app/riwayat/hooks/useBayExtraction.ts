@@ -19,7 +19,6 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { DUMMY_RIWAYAT_ITEMS } from '@/utils/dummyRiwayatItems';
 
 interface RiwayatManuver {
     id: string;
@@ -79,19 +78,8 @@ export function useBayExtraction(riwayatList: RiwayatManuver[], sortedList: Riwa
         const baysMap: Record<string, string[]> = {};
 
         sortedList.forEach(riwayat => {
-            if (riwayat.id.startsWith('dummy-')) {
-                const items = DUMMY_RIWAYAT_ITEMS[riwayat.id] || [];
-                const uniqueBays = items
-                    .map(item => {
-                        const parts = item.nama_peralatan.split(' ');
-                        return parts.slice(-2).join(' ');
-                    })
-                    .filter((bay, index, self) => bay && self.indexOf(bay) === index);
-                baysMap[riwayat.id] = uniqueBays;
-            } else {
-                // Use pre-fetched real data bays
-                baysMap[riwayat.id] = realDataBays[riwayat.id] || [];
-            }
+            // Use pre-fetched real data bays
+            baysMap[riwayat.id] = realDataBays[riwayat.id] || [];
         });
 
         return baysMap;

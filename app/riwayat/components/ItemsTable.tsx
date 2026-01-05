@@ -73,101 +73,101 @@ export const ItemsTable: React.FC<ItemsTableProps> = ({
                     Tidak ada data uraian.
                 </div>
             ) : (
-                <table className="w-full text-sm">
-                    <thead className="bg-gray-50 text-gray-500">
-                        <tr>
-                            <th className="py-2 px-3 text-left">Switchgear</th>
-                            <th className="py-2 px-3 text-center">Posisi</th>
-                            <th className="py-2 px-3 text-center">Jam</th>
-                            <th className="py-2 px-3 text-left">Act</th>
-                            {isEditMode && <th className="py-2 px-3 text-center w-12"></th>}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {items.map((item) => (
-                            item.is_separator ? (
-                                <tr key={item.id} className="bg-gray-50/50">
-                                    <td colSpan={isEditMode ? 5 : 4} className="py-2 px-3 text-center">
-                                        <div className="flex items-center gap-4">
-                                            <div className="h-px bg-gray-300 flex-1"></div>
-                                            <span className="text-xs font-bold text-gray-400 uppercase">Separator</span>
-                                            <div className="h-px bg-gray-300 flex-1"></div>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ) : isEditMode ? (
-                                // EDIT MODE ROW
-                                <tr key={item.id} className="border-t border-gray-100">
-                                    <td className="py-2 px-2">
-                                        <CascadingDropdown
-                                            value={item.nama_peralatan}
-                                            onSelect={(val) => onUpdateItem(item.id, 'nama_peralatan', val)}
-                                        />
-                                    </td>
-                                    <td className="py-2 px-2 text-center">
-                                        <button
-                                            onClick={() => onTogglePosition(item.id, item.posisi_switch)}
-                                            className={`cursor-pointer inline-flex items-center justify-center w-10 h-10 rounded-full font-bold text-lg transition-all ${item.posisi_switch
-                                                ? 'bg-red-100 text-red-600 border border-red-200'
-                                                : 'bg-green-100 text-green-600 border border-green-200'
-                                                }`}
-                                            title={item.posisi_switch ? 'Switch is CLOSED (//)' : 'Switch is OPEN (#)'}
-                                        >
-                                            {item.posisi_switch ? '//' : '#'}
-                                        </button>
-                                    </td>
-                                    <td className="p-0 text-center w-24">
-                                        <TimePicker
-                                            value={item.waktu}
-                                            onChange={(time) => onUpdateItem(item.id, 'waktu', time)}
-                                        />
-                                    </td>
-                                    <td className="py-2 px-2">
-                                        <select
-                                            value={item.act}
-                                            onChange={(e) => onUpdateItem(item.id, 'act', e.target.value)}
-                                            className="w-full bg-transparent border-b border-gray-200 focus:border-orange-400 focus:outline-none py-1 text-gray-700 text-sm"
-                                        >
-                                            <option value="R.ACC">R.ACC</option>
-                                            <option value="HMI">HMI</option>
-                                            <option value="Local">Local</option>
-                                            <option value="Manual">Manual</option>
-                                        </select>
-                                    </td>
-                                    <td className="py-2 px-2 text-center">
-                                        <button
-                                            onClick={() => onDeleteItem(item.id)}
-                                            className="text-red-500 hover:text-red-700 cursor-pointer transition-colors"
-                                            title="Delete Row"
-                                        >
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                <line x1="18" y1="6" x2="6" y2="18"></line>
-                                                <line x1="6" y1="6" x2="18" y2="18"></line>
-                                            </svg>
-                                        </button>
-                                    </td>
-                                </tr>
-                            ) : (
-                                // VIEW MODE ROW
-                                <tr key={item.id} className="border-t border-gray-100 hover:bg-orange-50/30">
-                                    <td className="py-2 px-3 text-gray-800">{item.nama_peralatan || '-'}</td>
-                                    <td className="py-2 px-3 text-center">
-                                        <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full font-bold ${(item.posisi_switch === '//' || item.posisi_switch === true)
-                                            ? 'bg-red-100 text-red-600'
-                                            : 'bg-green-100 text-green-600'
-                                            }`}>
-                                            {typeof item.posisi_switch === 'boolean'
-                                                ? (item.posisi_switch ? '//' : '#')
-                                                : (item.posisi_switch || '-')}
-                                        </span>
-                                    </td>
-                                    <td className="py-2 px-3 text-center text-gray-600">{item.waktu || '-'}</td>
-                                    <td className="py-2 px-3 text-gray-600">{item.act || '-'}</td>
-                                </tr>
-                            )
-                        ))}
-                    </tbody>
-                </table>
+                <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                        <thead className="bg-gray-50 text-gray-500">
+                            <tr>
+                                <th className="py-2 px-3 text-left w-auto min-w-[100px] max-w-[140px]">Switchgear</th>
+                                <th className="py-2 px-3 text-center w-16 whitespace-nowrap">Posisi</th>
+                                <th className="py-2 px-3 text-center w-20 whitespace-nowrap">Jam</th>
+                                <th className="py-2 px-3 text-left w-20 whitespace-nowrap">Act</th>
+                                {isEditMode && <th className="py-2 px-3 text-center w-10"></th>}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {items.map((item) => (
+                                item.is_separator ? (
+                                    <tr key={item.id} className="bg-gray-50/50">
+                                        <td colSpan={isEditMode ? 5 : 4} className="py-2 px-3 text-center">
+                                            <div className="flex items-center gap-4">
+                                                <div className="h-px bg-gray-300 flex-1"></div>
+                                                <span className="text-xs font-bold text-gray-400 uppercase">Separator</span>
+                                                <div className="h-px bg-gray-300 flex-1"></div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ) : isEditMode ? (
+                                    // EDIT MODE ROW
+                                    <tr key={item.id} className="border-t border-gray-100">
+                                        <td className="py-2 px-2 min-w-[100px] max-w-[140px]">
+                                            <CascadingDropdown
+                                                value={item.nama_peralatan}
+                                                onSelect={(val) => onUpdateItem(item.id, 'nama_peralatan', val)}
+                                            />
+                                        </td>
+                                        <td className="py-2 px-2 text-center whitespace-nowrap">
+                                            <button
+                                                onClick={() => onTogglePosition(item.id, item.posisi_switch)}
+                                                className={`cursor-pointer inline-flex items-center justify-center w-10 h-10 rounded-full font-bold text-lg transition-all ${item.posisi_switch
+                                                    ? 'bg-red-100 text-red-600 border border-red-200'
+                                                    : 'bg-green-100 text-green-600 border border-green-200'
+                                                    }`}
+                                                title={item.posisi_switch ? 'Switch is CLOSED (//)' : 'Switch is OPEN (#)'}
+                                            >
+                                                {item.posisi_switch ? '//' : '#'}
+                                            </button>
+                                        </td>
+                                        <td className="p-0 text-center w-20 whitespace-nowrap">
+                                            <TimePicker
+                                                value={item.waktu}
+                                                onChange={(time) => onUpdateItem(item.id, 'waktu', time)}
+                                            />
+                                        </td>
+                                        <td className="py-2 px-2 w-20 whitespace-nowrap">
+                                            <select
+                                                value={item.act}
+                                                onChange={(e) => onUpdateItem(item.id, 'act', e.target.value)}
+                                                className="w-full bg-transparent border-b border-gray-200 focus:border-orange-400 focus:outline-none py-1 text-gray-700 text-sm"
+                                            >
+                                                <option value="R.ACC">R.ACC</option>
+                                                <option value="HMI">HMI</option>
+                                                <option value="Local">Local</option>
+                                                <option value="Manual">Manual</option>
+                                            </select>
+                                        </td>
+                                        <td className="py-2 px-2 text-center whitespace-nowrap w-10">
+                                            <button
+                                                onClick={() => onDeleteItem(item.id)}
+                                                className="text-red-500 hover:text-red-700 cursor-pointer transition-colors p-2"
+                                                title="Delete Row"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                                </svg>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    // VIEW MODE ROW
+                                    <tr key={item.id} className="border-t border-gray-100 hover:bg-orange-50/30">
+                                        <td className="py-2 px-3 text-gray-800 break-words min-w-[100px] max-w-[140px] whitespace-normal">{item.nama_peralatan || '-'}</td>
+                                        <td className="py-2 px-3 text-center whitespace-nowrap">
+                                            <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full font-bold ${item.posisi_switch
+                                                ? 'bg-red-100 text-red-600'
+                                                : 'bg-green-100 text-green-600'
+                                                }`}>
+                                                {item.posisi_switch ? '//' : '#'}
+                                            </span>
+                                        </td>
+                                        <td className="py-2 px-3 text-center text-gray-600 whitespace-nowrap">{item.waktu || '-'}</td>
+                                        <td className="py-2 px-3 text-gray-600 whitespace-nowrap">{item.act || '-'}</td>
+                                    </tr>
+                                )
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
             )}
         </div>
     );

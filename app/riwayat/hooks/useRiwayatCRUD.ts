@@ -22,8 +22,6 @@
 
 import { useState, useCallback } from 'react';
 import { SupabaseClient } from '@supabase/supabase-js';
-import { DUMMY_RIWAYAT_DATA } from '@/utils/dummyRiwayatData';
-import { DUMMY_RIWAYAT_ITEMS } from '@/utils/dummyRiwayatItems';
 import { generateId } from '@/utils/generateId';
 
 interface RiwayatManuver {
@@ -77,11 +75,8 @@ export function useRiwayatCRUD(
             .select('*')
             .order('created_at', { ascending: false });
 
-        // Merge database data with dummy data
-        const allData = [...DUMMY_RIWAYAT_DATA, ...(data || [])];
-
         if (!error) {
-            setRiwayatList(allData);
+            setRiwayatList(data || []);
         }
         setIsLoading(false);
     }, [supabase]);
@@ -89,15 +84,6 @@ export function useRiwayatCRUD(
     // Fetch items for a specific riwayat
     const fetchItems = useCallback(async (riwayatId: string) => {
         setIsLoadingItems(true);
-
-        // If dummy data, use dummy items
-        if (riwayatId.startsWith('dummy-')) {
-            const dummyItems = DUMMY_RIWAYAT_ITEMS[riwayatId] || [];
-            setSelectedItems(dummyItems);
-            setEditedItems(dummyItems);
-            setIsLoadingItems(false);
-            return;
-        }
 
         // Otherwise fetch from database
         const { data, error } = await supabase

@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import HeaderAlat from '@/components/HeaderAlat';
 import DataAlat from '@/components/DataAlat';
+import Footer from '@/components/Footer';
 
 export default function PeralatanPage() {
     return (
@@ -26,9 +27,7 @@ export default function PeralatanPage() {
                     </Link>
                 </div>
 
-                <footer className="text-center text-gray-400 text-xs mt-12 pb-8">
-                    &copy; {new Date().getFullYear()} ManuverLog. Data Management System.
-                </footer>
+                <Footer />
             </div>
         </main>
     );

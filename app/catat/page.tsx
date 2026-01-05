@@ -7,6 +7,8 @@ import WhatsAppGenerator from '@/components/WhatsAppGenerator';
 import Link from 'next/link';
 import { generateId } from '@/utils/generateId';
 import { APP_VERSION } from '@/components/ChangeLog';
+import { createClient } from '@/utils/supabase/client';
+import Footer from '@/components/Footer';
 
 export default function CatatPage() {
     const [headerData, setHeaderData] = useState({
@@ -21,6 +23,8 @@ export default function CatatPage() {
     });
 
     const [logRows, setLogRows] = useState<LogRow[]>([]);
+    const [isSaving, setIsSaving] = useState(false);
+    const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
     // Initialize rows on client-side only to avoid hydration mismatch
     React.useEffect(() => {
@@ -38,6 +42,70 @@ export default function CatatPage() {
     const handleHeaderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         setHeaderData((prev: any) => ({ ...prev, [name]: value }));
+    };
+
+    const handleSaveManuver = async () => {
+        setIsSaving(true);
+        setSaveMessage(null);
+
+        try {
+            const supabase = createClient();
+
+            // 1. Insert header ke riwayat_manuver
+            const { data: riwayatData, error: riwayatError } = await supabase
+                .from('riwayat_manuver')
+                .insert({
+                    judul_manuver: headerData.judul_manuver,
+                    tanggal: headerData.tanggal,
+                    gardu_induk: headerData.gardu_induk,
+                    pengawas_pekerjaan: headerData.pengawas_pekerjaan,
+                    pengawas_k3: headerData.pengawas_k3,
+                    pengawas_manuver: headerData.pengawas_manuver,
+                    pelaksana_manuver: headerData.pelaksana_manuver,
+                    dispatcher: headerData.dispa,
+                })
+                .select('id')
+                .single();
+
+            if (riwayatError) {
+                throw new Error(`Gagal menyimpan header: ${riwayatError.message}`);
+            }
+
+            const riwayatId = riwayatData.id;
+
+            // 2. Insert items ke riwayat_items
+            const itemsToInsert = logRows
+                .filter(row => row.nama_peralatan || row.isSeparator) // Only insert rows with data or separators
+                .map((row, index) => ({
+                    riwayat_id: riwayatId,
+                    nama_peralatan: row.nama_peralatan,
+                    posisi_switch: row.posisi_switch,
+                    waktu: row.waktu,
+                    act: row.via,
+                    order_index: index,
+                    is_separator: row.isSeparator || false,
+                }));
+
+            if (itemsToInsert.length > 0) {
+                const { error: itemsError } = await supabase
+                    .from('riwayat_items')
+                    .insert(itemsToInsert);
+
+                if (itemsError) {
+                    throw new Error(`Gagal menyimpan items: ${itemsError.message}`);
+                }
+            }
+
+            setSaveMessage({ type: 'success', text: 'Tersimpan!' });
+
+            // Clear message after 3 seconds
+            setTimeout(() => setSaveMessage(null), 3000);
+
+        } catch (error: any) {
+            setSaveMessage({ type: 'error', text: error.message || 'Gagal menyimpan.' });
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     return (
@@ -68,11 +136,47 @@ export default function CatatPage() {
 
                 <LogTable rows={logRows} setRows={setLogRows} />
 
+                {/* Simpan Manuver - Minimalist button below table */}
+                <div className="flex items-center justify-end gap-3 mb-8 -mt-2 px-6">
+                    {saveMessage && (
+                        <span className={`text-sm font-medium ${saveMessage.type === 'success' ? 'text-green-600' : 'text-red-600'}`}>
+                            {saveMessage.text}
+                        </span>
+                    )}
+                    <button
+                        onClick={handleSaveManuver}
+                        disabled={isSaving}
+                        className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${isSaving
+                            ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                            : 'bg-orange-500 text-white hover:bg-orange-600 active:scale-95'
+                            }`}
+                    >
+                        {isSaving ? 'Menyimpan...' : 'Simpan manuver'}
+                    </button>
+                </div>
+
                 <WhatsAppGenerator header={headerData} rows={logRows} />
 
-                <footer className="text-center text-gray-400 text-xs mt-12 pb-8">
-                    &copy; {new Date().getFullYear()} ManuverLog. Designed for heavy-duty switching operations.
-                </footer>
+                {/* Quick Links */}
+                <div className="flex flex-wrap items-center justify-center gap-6 mt-12 mb-8">
+                    <Link
+                        href="/peralatan"
+                        className="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-orange-600 active:text-orange-700 transition-colors"
+                    >
+                        <span className="w-2 h-2 rounded-full bg-orange-400"></span>
+                        Tambahkan peralatan
+                    </Link>
+
+                    <Link
+                        href="/riwayat"
+                        className="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-orange-600 active:text-orange-700 transition-colors"
+                    >
+                        <span className="w-2 h-2 rounded-full bg-orange-400"></span>
+                        Riwayat manuver
+                    </Link>
+                </div>
+
+                <Footer />
             </div>
         </main>
     );

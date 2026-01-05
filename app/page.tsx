@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { VersionBadgeClickable } from '@/components/ChangeLog';
+import Footer from '@/components/Footer';
 
 export default function Home() {
   const menuItems = [
@@ -46,9 +47,8 @@ export default function Home() {
       </div>
 
       {/* Footer */}
-      <footer className="text-center text-gray-400 text-xs pb-8">
-        &copy; {new Date().getFullYear()} ManuverLog. Designed for heavy-duty switching operations.
-      </footer>
+      {/* Footer */}
+      <Footer />
     </main>
   );
 }

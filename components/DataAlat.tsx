@@ -458,13 +458,13 @@ export default function DataAlat() {
             {/* Data List Section */}
             <div className="bg-white rounded-xl border border-orange-100 shadow-sm flex flex-col h-[600px] overflow-hidden">
                 <div ref={tableContainerRef} className="flex-1 overflow-auto w-full [&::-webkit-scrollbar]:w-3 [&::-webkit-scrollbar]:h-3 [&::-webkit-scrollbar-track]:bg-slate-50 [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-slate-300">
-                    <table className="w-full text-left border-collapse min-w-[600px]">
+                    <table className="w-full text-left border-collapse min-w-[420px]">
                         <thead className="sticky top-0 bg-orange-50/90 backdrop-blur-sm z-10 shadow-sm">
                             <tr>
-                                <th className="py-2 px-2 font-semibold text-gray-600 text-sm w-10 border-b border-orange-100 text-center">No</th>
-                                <th className="py-2 px-4 font-semibold text-gray-600 text-sm border-b border-orange-100">Nama Peralatan</th>
-                                <th className="py-2 px-4 font-semibold text-gray-600 text-sm w-1/4 border-b border-orange-100">Bay</th>
-                                <th className="py-2 px-4 font-semibold text-gray-600 text-sm w-32 border-b border-orange-100">
+                                <th className="py-2 px-1 font-semibold text-gray-600 text-xs w-8 border-b border-orange-100 text-center">No</th>
+                                <th className="py-2 px-2 font-semibold text-gray-600 text-xs border-b border-orange-100">Nama Peralatan</th>
+                                <th className="py-2 px-2 font-semibold text-gray-600 text-xs w-1/5 border-b border-orange-100">Bay</th>
+                                <th className="py-2 px-1 font-semibold text-gray-600 text-xs w-20 border-b border-orange-100">
                                     <div className="flex items-center justify-center gap-3">
                                         <button
                                             onClick={undo}
@@ -519,9 +519,9 @@ export default function DataAlat() {
                                                 layout={!isInitialLoad}
                                                 className={`hover:bg-orange-50/30 transition-colors group ${item.id === newRowId ? 'bg-orange-100' : ''}`}
                                             >
-                                                <td className="py-2 px-2 text-gray-400 text-xs text-center w-10">{index + 1}</td>
-                                                <td className="py-2 px-4 font-medium text-gray-800 text-sm">{item.nama_lengkap}</td>
-                                                <td className="py-2 px-4 text-gray-600 text-sm">
+                                                <td className="py-1.5 px-1 text-gray-400 text-xs text-center w-8">{index + 1}</td>
+                                                <td className="py-1.5 px-2 font-medium text-gray-800 text-xs break-words">{item.nama_lengkap}</td>
+                                                <td className="py-1.5 px-2 text-gray-600 text-xs">
                                                     <button
                                                         onClick={() => setFilterBay(filterBay === item.bay ? null : item.bay)}
                                                         className={`px-2 py-0.5 rounded text-xs font-semibold tracking-wide transition-all cursor-pointer hover:scale-105 ${filterBay === item.bay ? 'bg-orange-500 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
@@ -530,11 +530,11 @@ export default function DataAlat() {
                                                         {item.bay}
                                                     </button>
                                                 </td>
-                                                <td className="py-2 px-4 text-center">
-                                                    <div className="flex items-center justify-center gap-1">
+                                                <td className="py-1.5 px-1 text-center">
+                                                    <div className="flex items-center justify-center gap-0">
                                                         <button
                                                             onClick={() => startEdit(item)}
-                                                            className="text-gray-400 hover:text-orange-500 active:scale-90 transition-all p-2"
+                                                            className="text-gray-400 hover:text-orange-500 active:scale-90 transition-all p-1"
                                                             title="Edit"
                                                         >
                                                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -544,7 +544,7 @@ export default function DataAlat() {
                                                         </button>
                                                         <button
                                                             onClick={() => handleDelete(item.id)}
-                                                            className="text-red-400 hover:text-red-600 active:scale-90 transition-all p-2"
+                                                            className="text-red-400 hover:text-red-600 active:scale-90 transition-all p-1"
                                                             title="Hapus"
                                                         >
                                                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

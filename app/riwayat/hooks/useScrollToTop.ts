@@ -31,6 +31,16 @@ export function useScrollToTop() {
             const windowHeight = window.innerHeight;
             const documentHeight = document.documentElement.scrollHeight;
 
+            // First check: is page even scrollable?
+            const isPageScrollable = documentHeight > windowHeight + 50; // 50px buffer
+
+            // If not scrollable, never show the button
+            if (!isPageScrollable) {
+                setShowScrollTop(false);
+                setLastScrollY(currentScrollY);
+                return;
+            }
+
             // Show button if:
             // 1. User is near bottom (within 200px)
             // 2. User is scrolling up and has scrolled down at least 500px
@@ -43,7 +53,13 @@ export function useScrollToTop() {
         };
 
         window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
+        // Also check on mount/resize
+        handleScroll();
+        window.addEventListener('resize', handleScroll);
+        return () => {
+            window.removeEventListener('scroll', handleScroll);
+            window.removeEventListener('resize', handleScroll);
+        };
     }, [lastScrollY]);
 
     const scrollToTop = () => {

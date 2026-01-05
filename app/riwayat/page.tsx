@@ -6,8 +6,6 @@ import { createClient } from '@/utils/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { APP_VERSION } from '@/components/ChangeLog';
 import Footer from '@/components/Footer';
-
-import { DUMMY_RIWAYAT_ITEMS } from '@/utils/dummyRiwayatItems';
 // Extracted components
 import { BayCell } from './components/BayCell';
 import { ScrollToTopButton } from './components/ScrollToTopButton';
@@ -125,21 +123,14 @@ export default function RiwayatPage() {
 
             // Search through all riwayat
             for (const riwayat of riwayatList) {
-                let items: any[] = [];
-
-                // Get items based on data type
-                if (riwayat.id.startsWith('dummy-')) {
-                    items = DUMMY_RIWAYAT_ITEMS[riwayat.id] || [];
-                } else {
-                    const { data } = await supabase
-                        .from('riwayat_items')
-                        .select('*')
-                        .eq('riwayat_id', riwayat.id);
-                    items = data || [];
-                }
+                const { data } = await supabase
+                    .from('riwayat_items')
+                    .select('*')
+                    .eq('riwayat_id', riwayat.id);
+                const items = data || [];
 
                 // Check if any item matches the search query
-                const hasMatch = items.some(item => {
+                const hasMatch = items.some((item: any) => {
                     const namaPeralatan = item.nama_peralatan?.toLowerCase() || '';
                     const bay = item.bay?.toLowerCase() || '';
 
@@ -226,17 +217,10 @@ export default function RiwayatPage() {
 
     // Filter by bay
     const bayFilteredList = filterBay
-        ? filteredRiwayatList.filter(riwayat => {
-            // Check if any item in this riwayat matches the filter bay
-            if (riwayat.id.startsWith('dummy-')) {
-                const items = DUMMY_RIWAYAT_ITEMS[riwayat.id] || [];
-                return items.some(item => {
-                    const parts = item.nama_peralatan.split(' ');
-                    const bay = parts.slice(-2).join(' ');
-                    return bay === filterBay;
-                });
-            }
-            return true; // For real data, keep it visible (Bay cell will handle real-time fetch)
+        ? filteredRiwayatList.filter(_riwayat => {
+            // For now, keep all items visible when bay filter is applied
+            // Bay filtering for real data happens on demand since we need to fetch items
+            return true;
         })
         : filteredRiwayatList;
 
@@ -370,6 +354,19 @@ export default function RiwayatPage() {
 
                 {/* Scroll to Top Button */}
                 < ScrollToTopButton showScrollTop={showScrollTop} scrollToTop={scrollToTop} />
+
+                {/* Link to Catat Manuver */}
+                <div className="mt-8 flex justify-center">
+                    <Link
+                        href="/catat"
+                        className="inline-flex items-center gap-1.5 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium rounded-lg shadow hover:shadow-md transition-all"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M12 5v14M5 12h14"></path>
+                        </svg>
+                        Manuver Baru
+                    </Link>
+                </div>
 
                 <Footer />
             </div >
