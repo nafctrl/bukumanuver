@@ -12,19 +12,7 @@
  */
 
 import React from 'react';
-
-interface RiwayatManuver {
-    id: string;
-    judul_manuver: string;
-    tanggal: string;
-    kode_gardu: string;
-    pengawas_pekerjaan: string;
-    pengawas_k3: string;
-    pengawas_manuver: string;
-    pelaksana_manuver: string;
-    dispatcher: string;
-    created_at: string;
-}
+import { RiwayatManuver } from '../types';
 
 interface DetailModalInfoGridProps {
     selectedRiwayat: RiwayatManuver;

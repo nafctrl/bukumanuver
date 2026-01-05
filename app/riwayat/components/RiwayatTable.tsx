@@ -22,13 +22,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { BayCell } from './BayCell';
-
-interface RiwayatManuver {
-    id: string;
-    judul_manuver: string;
-    tanggal: string;
-    [key: string]: any;
-}
+import { RiwayatManuver } from '../types';
 
 interface RiwayatTableProps {
     riwayatList: RiwayatManuver[];
@@ -163,8 +157,8 @@ export const RiwayatTable: React.FC<RiwayatTableProps> = ({
                                         onClick={undo}
                                         disabled={!canUndo || isUndoing}
                                         className={`text-xs font-medium px-2 py-1 rounded transition-colors ${canUndo && !isUndoing
-                                                ? 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                                                : 'text-gray-300 cursor-not-allowed'
+                                            ? 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                                            : 'text-gray-300 cursor-not-allowed'
                                             }`}
                                         title="Undo Last Delete"
                                     >

@@ -19,11 +19,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { createClient } from '@/utils/supabase/client';
-
-interface RiwayatManuver {
-    id: string;
-    [key: string]: any;
-}
+import { RiwayatManuver } from '../types';
 
 export function useBayExtraction(riwayatList: RiwayatManuver[], sortedList: RiwayatManuver[]) {
     const [realDataBays, setRealDataBays] = useState<Record<string, string[]>>({});

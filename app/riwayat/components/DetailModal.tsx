@@ -18,29 +18,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { DetailModalHeader } from './DetailModalHeader';
 import { DetailModalInfoGrid } from './DetailModalInfoGrid';
 import { ItemsTable } from './ItemsTable';
-
-interface RiwayatManuver {
-    id: string;
-    judul_manuver: string;
-    tanggal: string;
-    kode_gardu: string;
-    pengawas_pekerjaan: string;
-    pengawas_k3: string;
-    pengawas_manuver: string;
-    pelaksana_manuver: string;
-    dispatcher: string;
-    created_at: string;
-}
-
-interface RiwayatItem {
-    id: string;
-    nama_peralatan: string;
-    posisi_switch: boolean;
-    waktu: string;
-    act: string;
-    order_index: number;
-    is_separator: boolean;
-}
+import { RiwayatManuver, RiwayatItem } from '../types';
 
 interface DetailModalProps {
     // Data
