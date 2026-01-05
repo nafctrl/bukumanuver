@@ -20,11 +20,7 @@
  */
 
 import { useState } from 'react';
-
-interface RiwayatManuver {
-    id: string;
-    [key: string]: any;
-}
+import { RiwayatManuver } from '../types';
 
 interface HistoryEntry {
     action: 'delete';
